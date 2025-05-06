@@ -24,7 +24,7 @@ def move(distance, speed, is_forward):
         t1 = rospy.Time.now().to_sec()
         distance_moved = speed * (t1 - t0)
         rate.sleep()
-    
+
     vel_msg.linear.x = 0
     velocity_publisher.publish(vel_msg)
 
@@ -42,7 +42,7 @@ def rotate(angle_deg, angular_speed_deg, clockwise):
         t1 = rospy.Time.now().to_sec()
         angle_moved = angular_speed * (t1 - t0)
         rate.sleep()
-    
+
     vel_msg.angular.z = 0
     velocity_publisher.publish(vel_msg)
 
@@ -61,24 +61,29 @@ def circle(radius):
     vel_msg.linear.x = 1.0
     vel_msg.angular.z = 1.0 / radius
 
+    duration = 2 * math.pi * radius / vel_msg.linear.x
     t0 = rospy.Time.now().to_sec()
-    while rospy.Time.now().to_sec() - t0 < 2 * math.pi * radius / vel_msg.linear.x:
+    while rospy.Time.now().to_sec() - t0 < duration:
         velocity_publisher.publish(vel_msg)
         rate.sleep()
-    
+
     vel_msg.linear.x = 0
     vel_msg.angular.z = 0
     velocity_publisher.publish(vel_msg)
 
-def spiral():
+def spiral(change_radius=0.1, max_radius=10):
     vel_msg = Twist()
-    r = 0.0
-    while r < 10:
+    r = 0.1
+    while r < max_radius:
         vel_msg.linear.x = r
         vel_msg.angular.z = 1.0
         velocity_publisher.publish(vel_msg)
-        r += 0.1
+        r += change_radius
         rate.sleep()
+
+    vel_msg.linear.x = 0
+    vel_msg.angular.z = 0
+    velocity_publisher.publish(vel_msg)
 
 def point_to_point(x_goal, y_goal):
     vel_msg = Twist()
@@ -99,7 +104,7 @@ def point_to_point(x_goal, y_goal):
         if distance < 0.1:
             break
         rate.sleep()
-    
+
     vel_msg.linear.x = 0
     vel_msg.angular.z = 0
     velocity_publisher.publish(vel_msg)
@@ -113,7 +118,7 @@ def wave_motion(amplitude=1.0, wavelength=2.0, cycles=2):
         velocity_publisher.publish(vel_msg)
         t += 0.1
         rate.sleep()
-    
+
     vel_msg.linear.x = 0
     vel_msg.angular.z = 0
     velocity_publisher.publish(vel_msg)
@@ -131,11 +136,15 @@ if __name__ == '__main__':
         print("3. Circular")
         print("4. Spiral")
         print("5. Point to Point")
-        print("6. Hexagon (same as square logic with 6 sides)")
+        print("6. Hexagon")
         print("7. Wave motion")
         print("8. Exit")
 
-        choice = int(input("Enter your choice: "))
+        try:
+            choice = int(input("Enter your choice: "))
+        except:
+            print("Please enter a valid number.")
+            continue
 
         if choice == 1:
             length = float(input("Enter edge length of square: "))
@@ -147,7 +156,8 @@ if __name__ == '__main__':
             radius = float(input("Enter radius of circle: "))
             circle(radius)
         elif choice == 4:
-            spiral()
+            step = float(input("Enter spiral step increment (e.g., 0.1): "))
+            spiral(step)
         elif choice == 5:
             x = float(input("Enter goal x: "))
             y = float(input("Enter goal y: "))
@@ -158,8 +168,12 @@ if __name__ == '__main__':
                 move(length, 1.0, True)
                 rotate(60, 90, False)
         elif choice == 7:
-            wave_motion()
+            amplitude = float(input("Enter amplitude of wave: "))
+            wavelength = float(input("Enter wavelength: "))
+            cycles = int(input("Enter number of cycles: "))
+            wave_motion(amplitude, wavelength, cycles)
         elif choice == 8:
+            print("Exiting...")
             break
         else:
             print("Invalid choice. Try again.")
